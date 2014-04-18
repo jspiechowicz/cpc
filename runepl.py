@@ -8,8 +8,8 @@ Dp = 0
 lmd = 0
 fa = 0
 fb = 0
-taua = 0
-taub = 0
+mua = 0
+mub = 0
 comp = 1
 mean = 2.5
 
@@ -35,7 +35,7 @@ DIRNAME='./'
 
 for mean in [2.5, 5, 10]:
     out = 'epl_mean%s' % mean
-    _cmd = './prog --dev=%d --Dg=%s --Dp=%s --lambda=%s --fa=%s --fb=%s --taua=%s --taub=%s --comp=%d --mean=%s --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d >> %s.dat' % (dev, Dg, Dp, lmd, fa, fb, taua, taub, comp, mean, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, out)
+    _cmd = './prog --dev=%d --Dg=%s --Dp=%s --lambda=%s --fa=%s --fb=%s --mua=%s --mub=%s --comp=%d --mean=%s --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d >> %s.dat' % (dev, Dg, Dp, lmd, fa, fb, mua, mub, comp, mean, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, out)
     output = open('%s.dat' % out, 'w')
     print >>output, '#%s' % _cmd
     output.close()
