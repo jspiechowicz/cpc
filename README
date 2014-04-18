@@ -1,0 +1,22 @@
+/*
+ * Overdamped Brownian particle in symmetric piecewise linear potential
+ *
+ * \dot{x} = -V'(x) + Gaussian, Poissonian and dichotomous noise
+ *
+ * see J. Luczka, R. Bartussek and P. Hanggi, Europhys. Lett. 31, 431 (1995)
+ *     J. Kula, T. Czernik and J. Luczka, Phys. Lett. A 214, 14 (1996)
+ *
+ * (C) 2014 Jakub Spiechowicz,
+ *
+ *          Institute of Physics, University of Silesia, Katowice
+ *
+ * Features included:
+ *
+ *  - Gaussian, Poissonian and dichotomous noise
+ *  - exponential Poissonian kicks amplitude distribution
+ *  - simplified weak order 2.0 adapted predictor-corrector scheme
+ *  - asymptotic long time average velocity <<v>>
+ *  - path parameters folding for utilization of single precision arithmetics
+ *  - scan over multiple values of the system parameters in a single kernel call
+ *
+ */
