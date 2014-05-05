@@ -248,13 +248,13 @@ __device__ double diffusion(double l_Dg, double l_dt, curandState *l_state)
 __device__ double adapted_jump_poisson(int &npcd, int pcd, double l_lambda, double l_Dp, int l_comp, double l_dt, curandState *l_state)
 {
     if (l_lambda != 0.0) {
-        double comp = sqrtf(l_Dp*l_lambda)*l_dt;
         if (pcd <= 0) {
             double ampmean = sqrtf(l_lambda/l_Dp);
            
             npcd = (int) floor( -logf( curand_uniform_double(l_state) )/l_lambda/l_dt + 0.5 );
 
             if (l_comp) {
+                double comp = sqrtf(l_Dp*l_lambda)*l_dt;
                 return -logf( curand_uniform_double(l_state) )/ampmean - comp;
             } else {
                 return -logf( curand_uniform_double(l_state) )/ampmean;
@@ -262,6 +262,7 @@ __device__ double adapted_jump_poisson(int &npcd, int pcd, double l_lambda, doub
         } else {
             npcd = pcd - 1;
             if (l_comp) {
+                double comp = sqrtf(l_Dp*l_lambda)*l_dt;
                 return -comp;
             } else {
                 return 0.0;
@@ -279,18 +280,18 @@ __device__ double adapted_jump_dich(int &ndcd, int dcd, int &ndst, int dst, doub
             if (dst == 0) {
                 ndst = 1; 
                 ndcd = (int) floor( -logf( curand_uniform_double(l_state) )/l_mub/l_dt + 0.5 );
-                return l_fb;
+                return l_fb*l_dt;
             } else {
                 ndst = 0;
                 ndcd = (int) floor( -logf( curand_uniform_double(l_state) )/l_mua/l_dt + 0.5 );
-                return l_fa;
+                return l_fa*l_dt;
             }
         } else {
             ndcd = dcd - 1;
             if (dst == 0) {
-                return l_fa;
+                return l_fa*l_dt;
             } else {
-                return l_fb;
+                return l_fb*l_dt;
             }
         }
     } else {
@@ -317,7 +318,7 @@ __device__ void predcorr(double &corrl_x, double l_x, int &npcd, int pcd, curand
 
     l_xtt = drift(predl_x);
 
-    corrl_x = l_x + 0.5*(l_xt + l_xtt)*l_dt + adapted_jump_dich(ndcd, dcd, ndst, dst, l_fa, l_fb, l_mua, l_mub, l_dt, l_state)*l_dt + diffusion(l_Dg, l_dt, l_state) + adapted_jump_poisson(npcd, pcd, l_lambda, l_Dp, l_comp, l_dt, l_state);
+    corrl_x = l_x + 0.5*(l_xt + l_xtt)*l_dt + adapted_jump_dich(ndcd, dcd, ndst, dst, l_fa, l_fb, l_mua, l_mub, l_dt, l_state) + diffusion(l_Dg, l_dt, l_state) + adapted_jump_poisson(npcd, pcd, l_lambda, l_Dp, l_comp, l_dt, l_state);
 }
 
 __device__ void fold(double &nx, double x, double y, double &nfc, double fc)
