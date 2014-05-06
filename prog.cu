@@ -326,8 +326,11 @@ __device__ void predcorr(float &corrl_x, float l_x, int &npcd, int pcd, curandSt
 __device__ void fold(float &nx, float x, float y, float &nfc, float fc)
 //reduce periodic variable to the base domain
 {
-    nx = x - floor(x/y)*y;
-    nfc = fc + floor(x/y)*y;
+    float mod;
+
+    mod = floor(x/y)*y;
+    nx = x - mod;
+    nfc = fc + mod; 
 }
 
 __global__ void run_moments(float *d_x, float *d_xb, float *d_dx, curandState *d_states)
