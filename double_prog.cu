@@ -205,7 +205,7 @@ __global__ void init_dev_rng(unsigned int *d_seeds, curandState *d_states)
 {
     long idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    curand_init(d_seeds[idx], idx, 0, &d_states[idx]);
+    curand_init(d_seeds[idx], 0, 0, &d_states[idx]);
 }
 
 __device__ double drift(double l_x)
