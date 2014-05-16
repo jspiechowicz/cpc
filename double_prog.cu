@@ -233,10 +233,11 @@ __device__ double diffusion(double l_Dg, double l_dt, curandState *l_state)
 {
     if (l_Dg != 0.0) {
         double r = curand_uniform_double(l_state);
+        double g = sqrt(2.0*l_Dg); 
         if ( r <= 1.0/6 ) {
-            return -sqrtf(6.0*l_Dg*l_dt);
+            return -g*sqrt(3.0*l_dt);
         } else if ( r > 1.0/6 && r <= 2.0/6 ) {
-            return sqrtf(6.0*l_Dg*l_dt);
+            return g*sqrt(3.0*l_dt);
         } else {
             return 0.0;
         }
@@ -249,20 +250,22 @@ __device__ double adapted_jump_poisson(int &npcd, int pcd, double l_lambda, doub
 {
     if (l_lambda != 0.0) {
         if (pcd <= 0) {
-            double ampmean = sqrtf(l_lambda/l_Dp);
+            double ampmean = sqrt(l_lambda/l_Dp);
            
-            npcd = (int) floor( -logf( curand_uniform_double(l_state) )/l_lambda/l_dt + 0.5 );
+            npcd = (int) floor( -log( curand_uniform_double(l_state) )/l_lambda/l_dt + 0.5 );
 
             if (l_comp) {
-                double comp = sqrtf(l_Dp*l_lambda)*l_dt;
-                return -logf( curand_uniform_double(l_state) )/ampmean - comp;
+                double comp = sqrt(l_Dp*l_lambda)*l_dt;
+                
+                return -log( curand_uniform_double(l_state) )/ampmean - comp;
             } else {
-                return -logf( curand_uniform_double(l_state) )/ampmean;
+                return -log( curand_uniform_double(l_state) )/ampmean;
             }
         } else {
             npcd = pcd - 1;
             if (l_comp) {
-                double comp = sqrtf(l_Dp*l_lambda)*l_dt;
+                double comp = sqrt(l_Dp*l_lambda)*l_dt;
+                
                 return -comp;
             } else {
                 return 0.0;
@@ -279,11 +282,11 @@ __device__ double adapted_jump_dich(int &ndcd, int dcd, int &ndst, int dst, doub
         if (dcd <= 0) {
             if (dst == 0) {
                 ndst = 1; 
-                ndcd = (int) floor( -logf( curand_uniform_double(l_state) )/l_mub/l_dt + 0.5 );
+                ndcd = (int) floor( -log( curand_uniform_double(l_state) )/l_mub/l_dt + 0.5 );
                 return l_fb*l_dt;
             } else {
                 ndst = 0;
-                ndcd = (int) floor( -logf( curand_uniform_double(l_state) )/l_mua/l_dt + 0.5 );
+                ndcd = (int) floor( -log( curand_uniform_double(l_state) )/l_mua/l_dt + 0.5 );
                 return l_fa*l_dt;
             }
         } else {
@@ -321,11 +324,14 @@ __device__ void predcorr(double &corrl_x, double l_x, int &npcd, int pcd, curand
     corrl_x = l_x + 0.5*(l_xt + l_xtt)*l_dt + adapted_jump_dich(ndcd, dcd, ndst, dst, l_fa, l_fb, l_mua, l_mub, l_dt, l_state) + diffusion(l_Dg, l_dt, l_state) + adapted_jump_poisson(npcd, pcd, l_lambda, l_Dp, l_comp, l_dt, l_state);
 }
 
-__device__ void fold(double &nx, double x, double y, double &nfc, double fc)
+__device__ void fold(double &nx, double x, double y, double &nfx, double fx)
 //reduce periodic variable to the base domain
 {
-    nx = x - floor(x/y)*y;
-    nfc = fc + floor(x/y)*y;
+    double f;
+
+    f = floor(x/y)*y;
+    nx = x - f;
+    nfx = fx + f;
 }
 
 __global__ void run_moments(double *d_x, double *d_xb, double *d_dx, curandState *d_states)
@@ -427,15 +433,15 @@ __global__ void run_moments(double *d_x, double *d_xb, double *d_dx, curandState
     l_steps = d_steps;
     l_trigger = d_trigger;
 
-    //counters for folding
-    double xfc;
+    //folding
+    double fx;
     
-    xfc = 0.0;
-
-    int pcd, dcd, dst;
+    fx = 0.0;
 
     //jump countdowns
-    if (l_lambda != 0.0) pcd = (int) floor( -logf( curand_uniform_double(&l_state) )/l_lambda/l_dt + 0.5 );
+    int pcd, dcd, dst;
+    
+    if (l_lambda != 0.0) pcd = (int) floor( -log( curand_uniform_double(&l_state) )/l_lambda/l_dt + 0.5 );
 
     if (l_mua != 0.0 || l_mub != 0.0) {
         double rn;
@@ -443,10 +449,10 @@ __global__ void run_moments(double *d_x, double *d_xb, double *d_dx, curandState
 
         if (rn < 0.5) {
             dst = 0;
-            dcd = (int) floor( -logf( curand_uniform_double(&l_state) )/l_mua/l_dt + 0.5);
+            dcd = (int) floor( -log( curand_uniform_double(&l_state) )/l_mua/l_dt + 0.5);
         } else {
             dst = 1;
-            dcd = (int) floor( -logf( curand_uniform_double(&l_state) )/l_mub/l_dt + 0.5);
+            dcd = (int) floor( -log( curand_uniform_double(&l_state) )/l_mub/l_dt + 0.5);
         }
     }
     
@@ -457,17 +463,17 @@ __global__ void run_moments(double *d_x, double *d_xb, double *d_dx, curandState
         
         //fold path parameters
         if ( fabs(l_x) > 2.0 ) {
-            fold(l_x, l_x, 2.0, xfc, xfc);
+            fold(l_x, l_x, 2.0, fx, fx);
         }
 
         if (i == l_trigger) {
-            l_xb = l_x + xfc;
+            l_xb = l_x + fx;
         }
 
     }
 
     //write back path parameters to the global memory
-    d_x[idx] = l_x + xfc;
+    d_x[idx] = l_x + fx;
     d_xb[idx] = l_xb;
     d_states[idx] = l_state;
 }
