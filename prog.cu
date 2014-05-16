@@ -233,10 +233,11 @@ __device__ float diffusion(float l_Dg, float l_dt, curandState *l_state)
 {
     if (l_Dg != 0.0f) {
         float r = curand_uniform(l_state);
+        float g = sqrtf(2.0f*l_Dg);
         if ( r <= 1.0f/6 ) {
-            return -sqrtf(6.0f*l_Dg*l_dt);
+            return -g*sqrtf(3.0f*l_dt);
         } else if ( r > 1.0f/6 && r <= 2.0f/6 ) {
-            return sqrtf(6.0f*l_Dg*l_dt);
+            return g*sqrtf(3.0f*l_dt);
         } else {
             return 0.0f;
         }
@@ -323,14 +324,14 @@ __device__ void predcorr(float &corrl_x, float l_x, int &npcd, int pcd, curandSt
     corrl_x = l_x + 0.5f*(l_xt + l_xtt)*l_dt + adapted_jump_dich(ndcd, dcd, ndst, dst, l_fa, l_fb, l_mua, l_mub, l_dt, l_state) + diffusion(l_Dg, l_dt, l_state) + adapted_jump_poisson(npcd, pcd, l_lambda, l_Dp, l_comp, l_dt, l_state);
 }
 
-__device__ void fold(float &nx, float x, float y, float &nfc, float fc)
+__device__ void fold(float &nx, float x, float y, float &nfx, float fx)
 //reduce periodic variable to the base domain
 {
-    float mod;
+    float f;
 
-    mod = floor(x/y)*y;
-    nx = x - mod;
-    nfc = fc + mod; 
+    f = floor(x/y)*y;
+    nx = x - f;
+    nfx = fx + f; 
 }
 
 __global__ void run_moments(float *d_x, float *d_xb, float *d_dx, curandState *d_states)
@@ -432,14 +433,14 @@ __global__ void run_moments(float *d_x, float *d_xb, float *d_dx, curandState *d
     l_steps = d_steps;
     l_trigger = d_trigger;
 
-    //counters for folding
-    float xfc;
+    //folding
+    float fx;
     
-    xfc = 0.0f;
-
-    int pcd, dcd, dst;
+    fx = 0.0f;
 
     //jump countdowns
+    int pcd, dcd, dst;
+    
     if (l_lambda != 0.0f) pcd = (int) floor( -logf( curand_uniform(&l_state) )/l_lambda/l_dt + 0.5f );
 
     if (l_mua != 0.0f || l_mub != 0.0f) {
@@ -462,17 +463,17 @@ __global__ void run_moments(float *d_x, float *d_xb, float *d_dx, curandState *d
         
         //fold path parameters
         if ( fabs(l_x) > 2.0f ) {
-            fold(l_x, l_x, 2.0f, xfc, xfc);
+            fold(l_x, l_x, 2.0f, fx, fx);
         }
 
         if (i == l_trigger) {
-            l_xb = l_x + xfc;
+            l_xb = l_x + fx;
         }
 
     }
 
     //write back path parameters to the global memory
-    d_x[idx] = l_x + xfc;
+    d_x[idx] = l_x + fx;
     d_xb[idx] = l_xb;
     d_states[idx] = l_state;
 }
