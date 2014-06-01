@@ -212,7 +212,7 @@ __device__ double drift(double l_x)
 {
     double l_y, l_f;
 
-    l_y = fmod(l_x, 2.0);
+    l_y = x - floor(x/2.0f)*2.0f;
 
     if (l_y < -1.0) {
         l_y += 2.0;

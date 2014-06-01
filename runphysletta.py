@@ -18,7 +18,8 @@ dev = 0
 block = 64
 paths = 1024
 periods = 1000
-spp = 100
+spp = 200
+samples = 2000
 trans = 0.1
 
 #Output
@@ -36,13 +37,13 @@ DIRNAME='./'
 def lim(tau):
     return fa/((fa - fb)*tau)
 
-for fb in [1.6, 2.5, 3.5, 10]:
+for fb in [1.6]: #[1.6, 2.5, 3.5, 10]:
     tau = 0.01
     beginx = lim(tau)
     tau = 0.3
     endx = lim(tau)
     out = 'physletta_fb%s' % fb
-    _cmd = './prog --dev=%d --Dg=%s --Dp=%s --lambda=%s --fa=%s --fb=%s --mua=%s --mub=%s --comp=%d --mean=%s --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d >> %s.dat' % (dev, Dg, Dp, lmd, fa, fb, mua, mub, comp, mean, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, out)
+    _cmd = './prog --dev=%d --Dg=%s --Dp=%s --lambda=%s --fa=%s --fb=%s --mua=%s --mub=%s --comp=%d --mean=%s --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d >> %s.dat' % (dev, Dg, Dp, lmd, fa, fb, mua, mub, comp, mean, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples, out)
     output = open('%s.dat' % out, 'w')
     print >>output, '#%s' % _cmd
     output.close()
