@@ -48,7 +48,7 @@ for mean in [2.5]: #[2.5, 5, 10]:
 	    s += float(cmd)
         s = s/jmax
         print paths, s, points*paths*periods*spp/s/10**9
-        print >>output, '%s %s' % (paths, s, points*paths*periods*spp/s/10**9)
+        print >>output, '%s %s %s' % (paths, s, points*paths*periods*spp/s/10**9)
     output.close()
     #os.system('gnuplot -e "m=%s" epl.plt' % mean)
     #os.system('mv -v %s.dat %s.png %s' % (out, out, DIRNAME))
