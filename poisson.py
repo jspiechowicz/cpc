@@ -41,7 +41,7 @@ for mean in [2.5]: #[2.5, 5, 10]:
             block = 256
         s = 0.0
         for j in range(jmax):
-            _cmd = './prog --dev=%d --Dp=%s --lambda=%s --mean=%s --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d' % (dev, Dp, lmd, mean, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples)
+            _cmd = './poisson --dev=%d --Dp=%s --lambda=%s --mean=%s --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d' % (dev, Dp, lmd, mean, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples)
             #print _cmd
             cmd = commands.getoutput(_cmd)
             #print cmd

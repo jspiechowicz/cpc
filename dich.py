@@ -49,7 +49,7 @@ for fb in [1.6]: #[1.6, 2.5, 3.5, 10]:
             block = 256
         s = 0.0
         for j in range(jmax):
-            _cmd = './prog --dev=%d --fa=%s --fb=%s --mua=%s --mub=%s --comp=%d --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d' % (dev, fa, fb, mua, mub, comp, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples)
+            _cmd = './dich --dev=%d --fa=%s --fb=%s --mua=%s --mub=%s --comp=%d --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d' % (dev, fa, fb, mua, mub, comp, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples)
             #print _cmd
             cmd = commands.getoutput(_cmd)
             #print cmd
