@@ -652,6 +652,7 @@ int main(int argc, char **argv)
 
             for (i = 0; i < h_steps; i += h_samples) {
                 run_moments<<<h_grid, h_block>>>(d_x, d_dx, d_dcd, d_dst, d_states);
+                fold<<<h_grid, h_block>>>(d_x, d_fx);
                 if (i == h_trigger) {
                     cudaMemcpy(h_xb, d_x, size_f, cudaMemcpyDeviceToHost);
                     cudaMemcpy(h_fx, d_fx, size_f, cudaMemcpyDeviceToHost);
