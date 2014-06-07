@@ -29,26 +29,34 @@ DIRNAME='./'
 #os.system('mkdir -p %s' % DIRNAME)
 #os.system('rm -v %s*.dat %s*.png' % (DIRNAME, DIRNAME))
 
-for mean in [2.5]: #[2.5, 5, 10]:
-    out = 'poisson'
-    output = open('%s.dat' % out, 'w')
-    jmax = 10
-    for i in range(5,18):
-        paths = 2**i
-        if i < 8:
-            block = paths
+for prec in ['single, double']:
+    for mean in [2.5]: #[2.5, 5, 10]:
+        if prec == 'single':
+            out = 'poisson'
         else:
-            block = 256
-        s = 0.0
-        for j in range(jmax):
-            _cmd = './poisson --dev=%d --Dp=%s --lambda=%s --mean=%s --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d' % (dev, Dp, lmd, mean, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples)
-            #print _cmd
-            cmd = commands.getoutput(_cmd)
-            #print cmd
-	    s += float(cmd)
-        s = s/jmax
-        print paths, s, points*paths*periods*spp/s/10**9
-        print >>output, '%s %s %s' % (paths, s, points*paths*periods*spp/s/10**9)
-    output.close()
-    #os.system('gnuplot -e "m=%s" epl.plt' % mean)
-    #os.system('mv -v %s.dat %s.png %s' % (out, out, DIRNAME))
+            out = 'double_poisson'
+        output = open('%s.dat' % out, 'w')
+        jmax = 10
+        for i in range(5,18):
+            paths = 2**i
+            if i < 8:
+                block = paths
+            else:
+                block = 256
+            s = 0.0
+            for j in range(jmax):
+                if prec == 'single':
+                    _cmd = './poisson --dev=%d --Dp=%s --lambda=%s --mean=%s --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d' % (dev, Dp, lmd, mean, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples)
+                else:
+                    _cmd = './double_poisson --dev=%d --Dp=%s --lambda=%s --mean=%s --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d' % (dev, Dp, lmd, mean, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples)
+                #print _cmd
+                cmd = commands.getoutput(_cmd)
+                #print cmd
+	        s += float(cmd)
+            s = s/jmax
+            speed = points*paths*periods*spp/s/10**9
+            print paths, s, speed
+            print >>output, '%s %s %s' % (paths, s, speed)
+        output.close()
+        #os.system('gnuplot -e "m=%s" epl.plt' % mean)
+        #os.system('mv -v %s.dat %s.png %s' % (out, out, DIRNAME))

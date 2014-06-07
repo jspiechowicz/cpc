@@ -1,7 +1,7 @@
 /*
  * Overdamped Brownian particle in symmetric piecewise linear potential
  *
- * \dot{x} = -V'(x) + Gaussian, Poissonian and dichotomous noise
+ * \dot{x} = -V'(x) + dichotomous noise
  *
  */
 
@@ -18,9 +18,9 @@
 #define PI 3.14159265358979f
 
 //model
-__constant__ double d_Dg, d_Dp, d_lambda, d_mean, d_fa, d_fb, d_mua, d_mub;
+__constant__ double d_fa, d_fb, d_mua, d_mub;
 __constant__ int d_comp;
-double h_lambda, h_fa, h_fb, h_mua, h_mub, h_mean;
+double h_fa, h_fb, h_mua, h_mub;
 int h_comp;
 
 //simulation
@@ -41,7 +41,7 @@ __constant__ int d_points;
 //vector
 double *h_x, *h_xb, *h_fx, *h_dx;
 double *d_x, *d_fx, *d_dx;
-int *d_pcd, *d_dcd, *d_dst;
+int *d_dcd, *d_dst;
 unsigned int *h_seeds, *d_seeds;
 curandState *d_states;
 
@@ -49,159 +49,134 @@ size_t size_f, size_i, size_ui, size_p;
 curandGenerator_t gen;
 
 static struct option options[] = {
-    {"Dg", required_argument, NULL, 'a'},
-    {"Dp", required_argument, NULL, 'b'},
-    {"lambda", required_argument, NULL, 'c'},
-    {"fa", required_argument, NULL, 'd'},
-    {"fb", required_argument, NULL, 'e'},
-    {"mua", required_argument, NULL, 'f'},
-    {"mub", required_argument, NULL, 'g'},
-    {"comp", required_argument, NULL, 'h'},
-    {"mean", required_argument, NULL, 'i'},
-    {"dev", required_argument, NULL, 'j'},
-    {"block", required_argument, NULL, 'k'},
-    {"paths", required_argument, NULL, 'l'},
-    {"periods", required_argument, NULL, 'm'},
-    {"trans", required_argument, NULL, 'n'},
-    {"spp", required_argument, NULL, 'o'},
-    {"samples", required_argument, NULL, 'p'},
-    {"mode", required_argument, NULL, 'q'},
-    {"domain", required_argument, NULL, 'r'},
-    {"domainx", required_argument, NULL, 's'},
-    {"logx", required_argument, NULL, 't'},
-    {"points", required_argument, NULL, 'u'},
-    {"beginx", required_argument, NULL, 'v'},
-    {"endx", required_argument, NULL, 'w'}
+    {"fa", required_argument, NULL, 'a'},
+    {"fb", required_argument, NULL, 'b'},
+    {"mua", required_argument, NULL, 'c'},
+    {"mub", required_argument, NULL, 'd'},
+    {"comp", required_argument, NULL, 'e'},
+    {"dev", required_argument, NULL, 'f'},
+    {"block", required_argument, NULL, 'g'},
+    {"paths", required_argument, NULL, 'h'},
+    {"periods", required_argument, NULL, 'i'},
+    {"trans", required_argument, NULL, 'j'},
+    {"spp", required_argument, NULL, 'k'},
+    {"samples", required_argument, NULL, 'l'},
+    {"mode", required_argument, NULL, 'm'},
+    {"domain", required_argument, NULL, 'n'},
+    {"domainx", required_argument, NULL, 'o'},
+    {"logx", required_argument, NULL, 'p'},
+    {"points", required_argument, NULL, 'q'},
+    {"beginx", required_argument, NULL, 'r'},
+    {"endx", required_argument, NULL, 's'}
 };
 
 void usage(char **argv)
 {
     printf("Usage: %s <params> \n\n", argv[0]);
     printf("Model params:\n");
-    printf("    -a, --Dg=FLOAT          set the Gaussian noise intensity 'D_G' to FLOAT\n");
-    printf("    -b, --Dp=FLOAT          set the Poissonian noise intensity 'D_P' to FLOAT\n");
-    printf("    -c, --lambda=FLOAT      set the Poissonian kicks frequency '\\lambda' to FLOAT\n");
-    printf("    -d, --fa=FLOAT          set the first state of the dichotomous noise 'F_a' to FLOAT\n");
-    printf("    -e, --fb=FLOAT          set the second state of the dichotomous noise 'F_b' to FLOAT\n");
-    printf("    -f, --mua=FLOAT         set the transition rate of the first state of dichotomous noise '\\mu_a' to FLOAT\n");
-    printf("    -g, --mub=FLOAT         set the transition rate of the second state of dichotomous noise '\\mu_b' to FLOAT\n");
-    printf("    -h, --comp=INT          choose between biased and unbiased Poissonian or dichotomous noise. INT can be one of:\n");
+    printf("    -a, --fa=FLOAT          set the first state of the dichotomous noise 'F_a' to FLOAT\n");
+    printf("    -b, --fb=FLOAT          set the second state of the dichotomous noise 'F_b' to FLOAT\n");
+    printf("    -c, --mua=FLOAT         set the transition rate of the first state of dichotomous noise '\\mu_a' to FLOAT\n");
+    printf("    -d, --mub=FLOAT         set the transition rate of the second state of dichotomous noise '\\mu_b' to FLOAT\n");
+    printf("    -e, --comp=INT          choose between biased and unbiased Poissonian or dichotomous noise. INT can be one of:\n");
     printf("                            0: biased; 1: unbiased\n");
-    printf("    -i, --mean=FLOAT        if is nonzero, fix the mean value of Poissonian noise or dichotomous noise to FLOAT, matters only for domains p, l, a, b, m or n\n");
     printf("Simulation params:\n");
-    printf("    -j, --dev=INT           set the gpu device to INT\n");
-    printf("    -k, --block=INT         set the gpu block size to INT\n");
-    printf("    -l, --paths=LONG        set the number of paths to LONG\n");
-    printf("    -m, --periods=LONG      set the number of periods to LONG\n");
-    printf("    -n, --trans=FLOAT       specify fraction FLOAT of periods which stands for transients\n");
-    printf("    -o, --spp=INT           specify how many integration steps should be calculated for the smallest characteristic time scale\n");
-    printf("    -p, --samples=INT       specify how many integration steps should be calculated for a single kernel call\n");
+    printf("    -f, --dev=INT           set the gpu device to INT\n");
+    printf("    -g, --block=INT         set the gpu block size to INT\n");
+    printf("    -h, --paths=LONG        set the number of paths to LONG\n");
+    printf("    -i, --periods=LONG      set the number of periods to LONG\n");
+    printf("    -j, --trans=FLOAT       specify fraction FLOAT of periods which stands for transients\n");
+    printf("    -k, --spp=INT           specify how many integration steps should be calculated for the smaller characteristic time scale of dichotomous noise\n");
+    printf("    -l, --samples=INT       specify how many integration steps should be calculated for a single kernel call\n");
     printf("Output params:\n");
-    printf("    -q, --mode=STRING       sets the output mode. STRING can be one of:\n");
+    printf("    -m, --mode=STRING       sets the output mode. STRING can be one of:\n");
     printf("                            moments: the first moment <<v>>\n");
-    printf("    -r, --domain=STRING     simultaneously scan over one or two model params. STRING can be one of:\n");
+    printf("    -n, --domain=STRING     simultaneously scan over one or two model params. STRING can be one of:\n");
     printf("                            1d: only one parameter\n");
-    printf("    -s, --domainx=CHAR      sets the first domain of the moments. CHAR can be one of:\n");
-    printf("                            D: Dg; p: Dp; l: lambda; a: fa; b: fb; m: mua; n: mub\n");
-    printf("    -t, --logx=INT          choose between linear and logarithmic scale of the domainx\n");
+    printf("    -o, --domainx=CHAR      sets the first domain of the moments. CHAR can be one of:\n");
+    printf("                            a: fa; b: fb; m: mua; n: mub\n");
+    printf("    -p, --logx=INT          choose between linear and logarithmic scale of the domainx\n");
     printf("                            0: linear; 1: logarithmic\n");
-    printf("    -u, --points=INT        set the number of samples to generate between begin and end\n");
-    printf("    -v, --beginx=FLOAT      set the starting value of the domainx to FLOAT\n");
-    printf("    -w, --endx=FLOAT        set the end value of the domainx to FLOAT\n");
+    printf("    -q, --points=INT        set the number of samples to generate between begin and end\n");
+    printf("    -r, --beginx=FLOAT      set the starting value of the domainx to FLOAT\n");
+    printf("    -s, --endx=FLOAT        set the end value of the domainx to FLOAT\n");
     printf("\n");
 }
 
 void parse_cla(int argc, char **argv)
 {
-    double ftmp;
     int c, itmp;
 
-    while( (c = getopt_long(argc, argv, "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w", options, NULL)) != EOF) {
+    while( (c = getopt_long(argc, argv, "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s", options, NULL)) != EOF) {
         switch (c) {
             case 'a':
-                ftmp = atof(optarg);
-                cudaMemcpyToSymbol(d_Dg, &ftmp, sizeof(double));
-                break;
-            case 'b':
-                ftmp = atof(optarg);
-                cudaMemcpyToSymbol(d_Dp, &ftmp, sizeof(double));
-                break;
-            case 'c':
-                h_lambda = atof(optarg);
-                cudaMemcpyToSymbol(d_lambda, &h_lambda, sizeof(double));
-                break;
-            case 'd':
                 h_fa = atof(optarg);
                 cudaMemcpyToSymbol(d_fa, &h_fa, sizeof(double));
                 break;
-            case 'e':
+            case 'b':
                 h_fb = atof(optarg);
                 cudaMemcpyToSymbol(d_fb, &h_fb, sizeof(double));
                 break;
-            case 'f':
+            case 'c':
                 h_mua = atof(optarg);
                 cudaMemcpyToSymbol(d_mua, &h_mua, sizeof(double));
                 break;
-            case 'g':
+            case 'd':
                 h_mub = atof(optarg);
                 cudaMemcpyToSymbol(d_mub, &h_mub, sizeof(double));
                 break;
-            case 'h':
+            case 'e':
                 h_comp = atoi(optarg);
                 cudaMemcpyToSymbol(d_comp, &h_comp, sizeof(int));
                 break;
-            case 'i':
-                h_mean = atof(optarg);
-                cudaMemcpyToSymbol(d_mean, &h_mean, sizeof(double));
-                break;
-            case 'j':
+            case 'f':
                 itmp = atoi(optarg);
                 cudaSetDevice(itmp);
                 break;
-            case 'k':
+            case 'g':
                 h_block = atoi(optarg);
                 break;
-            case 'l':
+            case 'h':
                 h_paths = atol(optarg);
                 cudaMemcpyToSymbol(d_paths, &h_paths, sizeof(long));
                 break;
-            case 'm':
+            case 'i':
                 h_periods = atol(optarg);
                 break;
-            case 'n':
+            case 'j':
                 h_trans = atof(optarg);
                 break;
-            case 'o':
+            case 'k':
                 h_spp = atoi(optarg);
                 cudaMemcpyToSymbol(d_spp, &h_spp, sizeof(int));
                 break;
-            case 'p':
+            case 'l':
                 h_samples = atoi(optarg);
                 cudaMemcpyToSymbol(d_samples, &h_samples, sizeof(int));
                 break;
-            case 'q':
+            case 'm':
                 if ( !strcmp(optarg, "moments") ) {
                     h_moments = 1;
                 }
                 break;
-            case 'r':
+            case 'n':
                 h_domain = optarg;
                 break;
-            case 's':
+            case 'o':
                 h_domainx = optarg[0]; 
                 cudaMemcpyToSymbol(d_domainx, &h_domainx, sizeof(char));
                 break;
-            case 't':
+            case 'p':
                 h_logx = atoi(optarg);
                 break;
-            case 'u':
+            case 'q':
                 h_points = atoi(optarg);
                 cudaMemcpyToSymbol(d_points, &h_points, sizeof(int));
                 break;
-            case 'v':
+            case 'r':
                 h_beginx = atof(optarg);
                 break;
-            case 'w':
+            case 's':
                 h_endx = atof(optarg);
                 break;
         }
@@ -224,197 +199,113 @@ __device__ double drift(double l_x)
     }
 }
 
-__device__ double diffusion(double l_Dg, double l_dt, curandState *l_state)
-{
-    if (l_Dg != 0.0) {
-        double r = curand_uniform_double(l_state);
-        double g = sqrt(2.0*l_Dg);
-        if ( r <= 1.0/6.0 ) {
-            return -g*sqrt(3.0*l_dt);
-        } else if ( r > 1.0/6.0 && r <= 1.0/3.0 ) {
-            return g*sqrt(3.0*l_dt);
-        } else {
-            return 0.0;
-        }
-    } else {
-        return 0.0;
-    }
-}
-
-__global__ void init_noise(double *d_dx, int *d_pcd, int *d_dcd, int *d_dst, curandState *d_states)
-//init noise
+__global__ void init_dich(double *d_dx, int *d_dcd, int *d_dst, curandState *d_states)
+//init dichotomous noise
 {
     long idx = blockIdx.x * blockDim.x + threadIdx.x;
-    double l_dx; 
+    double l_dx;
     curandState l_state;
 
     //cache model parameters in local variables
     l_state = d_states[idx];
-
-    double l_Dp, l_lambda, l_mean, l_fa, l_fb, l_mua, l_mub;
+    
+    double l_fa, l_fb, l_mua, l_mub;
     int l_comp;
-
-    l_Dp = d_Dp;
-    l_lambda = d_lambda;
-    l_comp = d_comp;
-    l_mean = d_mean;
+    
     l_fa = d_fa;
     l_fb = d_fb;
     l_mua = d_mua;
     l_mub = d_mub;
+    l_comp = d_comp;
 
     long ridx = (idx/d_paths) % d_points;
     l_dx = d_dx[ridx];
 
     switch(d_domainx) {
-        case 'p':
-            l_Dp = l_dx;
-            if (l_mean != 0.0) l_lambda = (l_mean*l_mean)/l_Dp;
-            break;
-        case 'l':
-            l_lambda = l_dx;
-            if (l_mean != 0.0) l_Dp = (l_mean*l_mean)/l_lambda;
-            break;
         case 'a':
             l_fa = l_dx;
             if (l_comp == 1) {
                 l_fb = -l_fa*l_mub/l_mua;
-            } else if (l_mean != 0.0) {
-                l_fb = (l_mean*(l_mua + l_mub) - l_fa*l_mub)/l_mua;
             }
             break;
         case 'b':
             l_fb = l_dx;
             if (l_comp == 1) {
                 l_fa = -l_fb*l_mua/l_mub;
-            } else if (l_mean != 0.0) {
-                l_fa = (l_mean*(l_mua + l_mub) - l_fb*l_mua)/l_mub;
-            }
+            } 
             break;
         case 'm':
             l_mua = l_dx;
             if (l_comp == 1) {
                 l_mub = -l_fb*l_mua/l_fa;
-            } else if (l_mean != 0.0) {
-                l_mub = (l_fb - l_mean)*l_mua/(l_mean - l_fa);
             }
             break;
         case 'n':
             l_mub = l_dx;
             if (l_comp == 1) {
                 l_mua = -l_fa*l_mub/l_fb;
-            } else if (l_mean != 0.0) {
-                l_mua = (l_fa - l_mean)*l_mub/(l_mean - l_fb);
             }
             break;
     }
 
     //step size
-    double l_dt;
+    double l_dt, taua, taub;
     int l_spp;
 
     l_spp = d_spp;
 
-    if (l_lambda != 0.0) {
-        l_dt = 1.0/l_lambda/l_spp;
+    taua = 1.0/l_mua;
+    taub = 1.0/l_mub;
+
+    if (taua < taub) {
+        l_dt = taua/l_spp;
+    } else {
+        l_dt = taub/l_spp;
     }
 
-    if (l_mua != 0.0) {
-        double taua, taub;
+    //jump countdown 
+    int l_dcd, l_dst;
 
-        taua = 1.0/l_mua;
-        taub = 1.0/l_mub;
+    double rn;
+    rn = curand_uniform_double(&l_state);
 
-        if (taua < taub) {
-            l_dt = taua/l_spp;
-        } else {
-            l_dt = taub/l_spp;
-        }
+    if (rn < 0.5) {
+        l_dst = 0;
+        l_dcd = (int) floor( -log( curand_uniform_double(&l_state) )/l_mua/l_dt + 0.5);
+    } else {
+        l_dst = 1;
+        l_dcd = (int) floor( -log( curand_uniform_double(&l_state) )/l_mub/l_dt + 0.5);
     }
-
-    //jump countdowns
-    int l_pcd, l_dcd, l_dst;
-    
-    if (l_lambda != 0.0) l_pcd = (int) floor( -log( curand_uniform_double(&l_state) )/l_lambda/l_dt + 0.5 );
-
-    if (l_mua != 0.0) {
-        double rn;
-        rn = curand_uniform_double(&l_state);
-
-        if (rn < 0.5) {
-            l_dst = 0;
-            l_dcd = (int) floor( -log( curand_uniform_double(&l_state) )/l_mua/l_dt + 0.5);
-        } else {
-            l_dst = 1;
-            l_dcd = (int) floor( -log( curand_uniform_double(&l_state) )/l_mub/l_dt + 0.5);
-        }
-    }
-    
-    //write back noise states to the global memory
-    d_pcd[idx] = l_pcd;
+   
+    //write back noise state to the global memory
     d_dcd[idx] = l_dcd;
     d_dst[idx] = l_dst;
     d_states[idx] = l_state;
 }
 
-__device__ double adapted_jump_poisson(int &npcd, int pcd, double l_lambda, double l_Dp, int l_comp, double l_dt, curandState *l_state)
-{
-    if (l_lambda != 0.0) {
-        if (pcd <= 0) {
-            double ampmean = sqrt(l_lambda/l_Dp);
-           
-            npcd = (int) floor( -log( curand_uniform_double(l_state) )/l_lambda/l_dt + 0.5 );
-
-            if (l_comp) {
-                double comp = sqrt(l_Dp*l_lambda)*l_dt;
-                
-                return -log( curand_uniform_double(l_state) )/ampmean - comp;
-            } else {
-                return -log( curand_uniform_double(l_state) )/ampmean;
-            }
-        } else {
-            npcd = pcd - 1;
-            if (l_comp) {
-                double comp = sqrt(l_Dp*l_lambda)*l_dt;
-                
-                return -comp;
-            } else {
-                return 0.0;
-            }
-        }
-    } else {
-        return 0.0;
-    }
-}
-
 __device__ double adapted_jump_dich(int &ndcd, int dcd, int &ndst, int dst, double l_fa, double l_fb, double l_mua, double l_mub, double l_dt, curandState *l_state)
 {
-    if (l_mua != 0.0) {
-        if (dcd <= 0) {
-            if (dst == 0) {
-                ndst = 1; 
-                ndcd = (int) floor( -log( curand_uniform_double(l_state) )/l_mub/l_dt + 0.5 );
-                return l_fb*l_dt;
-            } else {
-                ndst = 0;
-                ndcd = (int) floor( -log( curand_uniform_double(l_state) )/l_mua/l_dt + 0.5 );
-                return l_fa*l_dt;
-            }
+    if (dcd <= 0) {
+        if (dst == 0) {
+            ndst = 1; 
+            ndcd = (int) floor( -log( curand_uniform_double(l_state) )/l_mub/l_dt + 0.5 );
+            return l_fb*l_dt;
         } else {
-            ndcd = dcd - 1;
-            if (dst == 0) {
-                return l_fa*l_dt;
-            } else {
-                return l_fb*l_dt;
-            }
+            ndst = 0;
+            ndcd = (int) floor( -log( curand_uniform_double(l_state) )/l_mua/l_dt + 0.5 );
+            return l_fa*l_dt;
         }
     } else {
-        return 0.0;
+        ndcd = dcd - 1;
+        if (dst == 0) {
+            return l_fa*l_dt;
+        } else {
+            return l_fb*l_dt;
+        }
     }
 }
 
-__device__ void predcorr(double &corrl_x, double l_x, int &npcd, int pcd, curandState *l_state, \
-                         double l_Dg, double l_Dp, double l_lambda, int l_comp, \
+__device__ void predcorr(double &corrl_x, double l_x, curandState *l_state, \
                          int &ndcd, int dcd, int &ndst, int dst, double l_fa, double l_fb, double l_mua, double l_mub, double l_dt)
 /* simplified weak order 2.0 adapted predictor-corrector scheme
 ( see E. Platen, N. Bruti-Liberati; Numerical Solution of Stochastic Differential Equations with Jumps in Finance; Springer 2010; p. 503, p. 532 )
@@ -424,15 +315,15 @@ __device__ void predcorr(double &corrl_x, double l_x, int &npcd, int pcd, curand
 
     l_xt = drift(l_x);
 
-    predl_x = l_x + l_xt*l_dt + diffusion(l_Dg, l_dt, l_state);
+    predl_x = l_x + l_xt*l_dt; 
 
     l_xtt = drift(predl_x);
 
-    predl_x = l_x + 0.5*(l_xt + l_xtt)*l_dt + diffusion(l_Dg, l_dt, l_state);
+    predl_x = l_x + 0.5*(l_xt + l_xtt)*l_dt;
 
     l_xtt = drift(predl_x);
 
-    corrl_x = l_x + 0.5*(l_xt + l_xtt)*l_dt + adapted_jump_dich(ndcd, dcd, ndst, dst, l_fa, l_fb, l_mua, l_mub, l_dt, l_state) + diffusion(l_Dg, l_dt, l_state) + adapted_jump_poisson(npcd, pcd, l_lambda, l_Dp, l_comp, l_dt, l_state);
+    corrl_x = l_x + 0.5*(l_xt + l_xtt)*l_dt + adapted_jump_dich(ndcd, dcd, ndst, dst, l_fa, l_fb, l_mua, l_mub, l_dt, l_state); 
 }
 
 __global__ void fold(double *d_x, double *d_fx)
@@ -460,120 +351,83 @@ void unfold(double *x, double *fx)
     }
 }
 
-__global__ void run_moments(double *d_x, double *d_dx, int *d_pcd, int *d_dcd, int *d_dst, curandState *d_states)
+__global__ void run_moments(double *d_x, double *d_dx, int *d_dcd, int *d_dst, curandState *d_states)
 //actual moments kernel
 {
     long idx = blockIdx.x * blockDim.x + threadIdx.x;
     double l_x, l_dx; 
+    int l_dcd, l_dst;
     curandState l_state;
 
     //cache path and model parameters in local variables
     l_x = d_x[idx];
+    l_dcd = d_dcd[idx];
+    l_dst = d_dst[idx];
     l_state = d_states[idx];
-
-    double l_Dg, l_Dp, l_lambda, l_mean, l_fa, l_fb, l_mua, l_mub;
+    
+    double l_fa, l_fb, l_mua, l_mub;
     int l_comp;
 
-    l_Dg = d_Dg;
-    l_Dp = d_Dp;
-    l_lambda = d_lambda;
-    l_comp = d_comp;
-    l_mean = d_mean;
     l_fa = d_fa;
     l_fb = d_fb;
     l_mua = d_mua;
     l_mub = d_mub;
+    l_comp = d_comp;
 
     //run simulation for multiple values of the system parameters
     long ridx = (idx/d_paths) % d_points;
     l_dx = d_dx[ridx];
 
     switch(d_domainx) {
-        case 'D':
-            l_Dg = l_dx;
-            break;
-        case 'p':
-            l_Dp = l_dx;
-            if (l_mean != 0.0) l_lambda = (l_mean*l_mean)/l_Dp;
-            break;
-        case 'l':
-            l_lambda = l_dx;
-            if (l_mean != 0.0) l_Dp = (l_mean*l_mean)/l_lambda;
-            break;
         case 'a':
             l_fa = l_dx;
             if (l_comp == 1) {
                 l_fb = -l_fa*l_mub/l_mua;
-            } else if (l_mean != 0.0) {
-                l_fb = (l_mean*(l_mua + l_mub) - l_fa*l_mub)/l_mua;
             }
             break;
         case 'b':
             l_fb = l_dx;
             if (l_comp == 1) {
                 l_fa = -l_fb*l_mua/l_mub;
-            } else if (l_mean != 0.0) {
-                l_fa = (l_mean*(l_mua + l_mub) - l_fb*l_mua)/l_mub;
-            }
+            } 
             break;
         case 'm':
             l_mua = l_dx;
             if (l_comp == 1) {
                 l_mub = -l_fb*l_mua/l_fa;
-            } else if (l_mean != 0.0) {
-                l_mub = (l_fb - l_mean)*l_mua/(l_mean - l_fa);
             }
             break;
         case 'n':
             l_mub = l_dx;
             if (l_comp == 1) {
                 l_mua = -l_fa*l_mub/l_fb;
-            } else if (l_mean != 0.0) {
-                l_mua = (l_fa - l_mean)*l_mub/(l_mean - l_fb);
             }
             break;
     }
 
     //step size & number of steps
-    double l_dt;
+    double l_dt, taua, taub;
     int i, l_spp, l_samples;
 
     l_spp = d_spp;
 
-    if (l_lambda != 0.0) {
-        l_dt = 1.0/l_lambda/l_spp;
-    }
+    taua = 1.0/l_mua;
+    taub = 1.0/l_mub;
 
-    if (l_mua != 0.0) {
-        double taua, taub;
-
-        taua = 1.0/l_mua;
-        taub = 1.0/l_mub;
-
-        if (taua < taub) {
-            l_dt = taua/l_spp;
-        } else {
-            l_dt = taub/l_spp;
-        }
+    if (taua < taub) {
+        l_dt = taua/l_spp;
+    } else {
+        l_dt = taub/l_spp;
     }
 
     l_samples = d_samples;
 
-    //jump countdowns
-    int l_pcd, l_dcd, l_dst;
-    
-    l_pcd = d_pcd[idx];
-    l_dcd = d_dcd[idx];
-    l_dst = d_dst[idx];
-
     for (i = 0; i < l_samples; i++) {
-        predcorr(l_x, l_x, l_pcd, l_pcd, &l_state, l_Dg, l_Dp, l_lambda, l_comp, \
-                 l_dcd, l_dcd, l_dst, l_dst, l_fa, l_fb, l_mua, l_mub, l_dt); 
+        predcorr(l_x, l_x, &l_state, l_dcd, l_dcd, l_dst, l_dst, l_fa, l_fb, l_mua, l_mub, l_dt);
     }
 
     //write back path parameters to the global memory
     d_x[idx] = l_x;
-    d_pcd[idx] = l_pcd;
     d_dcd[idx] = l_dcd;
     d_dst[idx] = l_dst;
     d_states[idx] = l_state;
@@ -611,7 +465,6 @@ void prepare()
     //device memory allocation
     cudaMalloc((void**)&d_x, size_f);
     cudaMalloc((void**)&d_seeds, size_ui);
-    cudaMalloc((void**)&d_pcd, size_i);
     cudaMalloc((void**)&d_dcd, size_i);
     cudaMalloc((void**)&d_dst, size_i);
     cudaMalloc((void**)&d_states, h_threads*sizeof(curandState));
@@ -683,7 +536,7 @@ void initial_conditions()
 void moments(double *av)
 //calculate the first moment of v
 {
-    double sx, sxb, tmp, taua, taub, dt;
+    double sx, sxb, taua, taub, dt, tmp;
     int i, j;
 
     cudaMemcpy(h_x, d_x, size_f, cudaMemcpyDeviceToHost);
@@ -700,15 +553,6 @@ void moments(double *av)
             sxb += h_xb[j*h_paths + i];
         }
 
-        //Poissonian
-        if (h_domainx == 'l') {
-            dt = 1.0/h_dx[j]/h_spp;
-        } else if (h_domainx == 'p' && h_mean != 0.0) {
-            dt = 1.0/(h_mean*h_mean/h_dx[j])/h_spp;
-        } else if (h_lambda != 0.0) {
-            dt = 1.0/h_lambda/h_spp;
-        }
-
         //Dichotomous
         if (h_domainx == 'm') {
             taua = 1.0/h_dx[j];
@@ -716,8 +560,6 @@ void moments(double *av)
 
             if (h_comp) {
                 tmp = 1.0/(-h_fb*h_dx[j]/h_fa);
-            } else if (h_mean != 0.0) {
-                tmp = (h_fb - h_mean)*h_dx[j]/(h_mean - h_fa);
             } else {
                 tmp = taub;
             }
@@ -733,8 +575,6 @@ void moments(double *av)
 
             if (h_comp) {
                 tmp = 1.0/(-h_fa*h_dx[j]/h_fb);
-            } else if (h_mean != 0.0) {
-                tmp = (h_fa - h_mean)*h_dx[j]/(h_mean - h_fb);
             } else {
                 tmp = taua;
             }
@@ -754,7 +594,7 @@ void moments(double *av)
                 dt = taub/h_spp;
             }
         }
-            
+
         av[j] = (sx - sxb)/( (1.0 - h_trans)*h_steps*dt )/h_paths;
     }
 }
@@ -767,7 +607,6 @@ void finish()
     
     curandDestroyGenerator(gen);
     cudaFree(d_x);
-    cudaFree(d_pcd);
     cudaFree(d_dcd);
     cudaFree(d_dst);
     cudaFree(d_states);
@@ -784,6 +623,9 @@ void finish()
 
 int main(int argc, char **argv)
 {
+    clock_t b, e;
+    double t;
+
     parse_cla(argc, argv);
     if (!h_moments) {
         usage(argv);
@@ -796,17 +638,20 @@ int main(int argc, char **argv)
     
     //asymptotic long time average velocity <<v>>
     if (h_moments) {
-        double *av;
+        //double *av;
         int i;
 
-        av = (double*)malloc(size_p);
+        //av = (double*)malloc(size_p);
  
         if ( !strcmp(h_domain, "1d") ) { 
 
-            init_noise<<<h_grid, h_block>>>(d_dx, d_pcd, d_dcd, d_dst, d_states);
+            cudaDeviceSynchronize();
+            b = clock();
+
+            init_dich<<<h_grid, h_block>>>(d_dx, d_dcd, d_dst, d_states);
 
             for (i = 0; i < h_steps; i += h_samples) {
-                run_moments<<<h_grid, h_block>>>(d_x, d_dx, d_pcd, d_dcd, d_dst, d_states);
+                run_moments<<<h_grid, h_block>>>(d_x, d_dx, d_dcd, d_dst, d_states);
                 fold<<<h_grid, h_block>>>(d_x, d_fx);
                 if (i == h_trigger) {
                     cudaMemcpy(h_xb, d_x, size_f, cudaMemcpyDeviceToHost);
@@ -815,15 +660,21 @@ int main(int argc, char **argv)
                 }
             }
 
-            moments(av);
+            cudaDeviceSynchronize();
+            e = clock();
+            t = (double)(e - b) / CLOCKS_PER_SEC;
+
+            /*moments(av);
  
             printf("#%c <<v>>\n", h_domainx);
             for (i = 0; i < h_points; i++) {
                 printf("%e %e\n", h_dx[i], av[i]);
-            }
+            }*/
+
+            printf("%lf\n", t);
         }
 
-        free(av);
+        //free(av);
     }
 
     finish();

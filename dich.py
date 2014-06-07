@@ -33,30 +33,38 @@ DIRNAME='./'
 def lim(tau):
     return fa/((fa - fb)*tau)
 
-for fb in [1.6]: #[1.6, 2.5, 3.5, 10]:
-    tau = 0.01
-    beginx = lim(tau)
-    tau = 0.3
-    endx = lim(tau)
-    out = 'dich'
-    output = open('%s.dat' % out, 'w')
-    jmax = 10
-    for i in range(5,18):
-        paths = 2**i
-        if i < 8:
-            block = paths
+for prec in ['single', 'double']:
+    for fb in [1.6]: #[1.6, 2.5, 3.5, 10]:
+        tau = 0.01
+        beginx = lim(tau)
+        tau = 0.3
+        endx = lim(tau)
+        if prec == 'single':
+            out = 'dich'
         else:
-            block = 256
-        s = 0.0
-        for j in range(jmax):
-            _cmd = './dich --dev=%d --fa=%s --fb=%s --mua=%s --mub=%s --comp=%d --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d' % (dev, fa, fb, mua, mub, comp, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples)
-            #print _cmd
-            cmd = commands.getoutput(_cmd)
-            #print cmd
-            s += float(cmd)
-        s = s/jmax
-        print paths, s, points*paths*periods*spp/s/10**9
-        print >>output, '%s %s %s' % (paths, s, points*paths*periods*spp/s/10**9)
-    output.close()
-    #os.system('tac %s.dat | gnuplot -e "fa=%s; fb=%s" physletta.plt' % (out,fa,fb))
-    #os.system('mv -v %s.dat %s.png %s' % (out, out, DIRNAME))
+            out = 'double_dich'
+        output = open('%s.dat' % out, 'w')
+        jmax = 10
+        for i in range(5,18):
+            paths = 2**i
+            if i < 8:
+                block = paths
+            else:
+                block = 256
+            s = 0.0
+            for j in range(jmax):
+                if prec == 'single':
+                    _cmd = './dich --dev=%d --fa=%s --fb=%s --mua=%s --mub=%s --comp=%d --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d' % (dev, fa, fb, mua, mub, comp, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples)
+                else:
+                    _cmd = './double_dich --dev=%d --fa=%s --fb=%s --mua=%s --mub=%s --comp=%d --block=%d --paths=%d --periods=%s --spp=%d --trans=%s --mode=%s --points=%d --beginx=%s --endx=%s --domain=%s --domainx=%s --logx=%d --samples=%d' % (dev, fa, fb, mua, mub, comp, block, paths, periods, spp, trans, mode, points, beginx, endx, domain, domainx, logx, samples)
+                #print _cmd
+                cmd = commands.getoutput(_cmd)
+                #print cmd
+                s += float(cmd)
+            s = s/jmax
+            speed = points*paths*periods*spp/s/10**9
+            print paths, s, speed 
+            print >>output, '%s %s %s' % (paths, s, speed)
+        output.close()
+        #os.system('tac %s.dat | gnuplot -e "fa=%s; fb=%s" physletta.plt' % (out,fa,fb))
+        #os.system('mv -v %s.dat %s.png %s' % (out, out, DIRNAME))
