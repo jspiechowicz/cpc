@@ -6,7 +6,7 @@
  * see J. Luczka, R. Bartussek and P. Hanggi, Europhys. Lett. 31, 431 (1995)
  *     J. Kula, T. Czernik and J. Luczka, Phys. Lett. A 214, 14 (1996)
  *
- * (C) 2014 Jakub Spiechowicz,
+ * (C) 2014 Jakub Spiechowicz, Lukasz Machura
  *
  *          Institute of Physics, University of Silesia, Katowice
  *
@@ -18,5 +18,5 @@
  *  - asymptotic long time average velocity <<v>>
  *  - path parameters folding for utilization of single precision arithmetics
  *  - scan over multiple values of the system parameters in a single kernel call
- *
+ *  - c-version for testing
  */
