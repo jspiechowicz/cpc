@@ -504,7 +504,6 @@ void prepare()
         cudaMalloc((void**)&d_fx, size_f);
         cudaMalloc((void**)&d_dx, size_p);
     
-        cudaMemcpy(d_fx, h_fx, size_f, cudaMemcpyHostToDevice);
         cudaMemcpy(d_dx, h_dx, size_p, cudaMemcpyHostToDevice);
     }
 }

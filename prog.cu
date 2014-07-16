@@ -651,7 +651,6 @@ void prepare()
         cudaMalloc((void**)&d_fx, size_f);
         cudaMalloc((void**)&d_dx, size_p);
     
-        cudaMemcpy(d_fx, h_fx, size_f, cudaMemcpyHostToDevice);
         cudaMemcpy(d_dx, h_dx, size_p, cudaMemcpyHostToDevice);
     }
 }
@@ -717,7 +716,7 @@ void moments(float *av)
             if (h_comp) {
                 tmp = 1.0f/(-h_fb*h_dx[j]/h_fa);
             } else if (h_mean != 0.0f) {
-                tmp = (h_fb - h_mean)*h_dx[j]/(h_mean - h_fa);
+                tmp = 1.0f/((h_fb - h_mean)*h_dx[j]/(h_mean - h_fa));
             } else {
                 tmp = taub;
             }
@@ -734,7 +733,7 @@ void moments(float *av)
             if (h_comp) {
                 tmp = 1.0f/(-h_fa*h_dx[j]/h_fb);
             } else if (h_mean != 0.0f) {
-                tmp = (h_fa - h_mean)*h_dx[j]/(h_mean - h_fb);
+                tmp = 1.0f/((h_fa - h_mean)*h_dx[j]/(h_mean - h_fb));
             } else {
                 tmp = taua;
             }
