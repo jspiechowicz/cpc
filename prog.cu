@@ -600,6 +600,7 @@ void prepare()
     size_p = h_points*sizeof(float);
 
     h_x = (float*)malloc(size_f);
+    h_fx = (float*)malloc(size_f);
     h_seeds = (unsigned int*)malloc(size_ui);
 
     //create & initialize host rng
@@ -610,6 +611,7 @@ void prepare()
  
     //device memory allocation
     cudaMalloc((void**)&d_x, size_f);
+    cudaMalloc((void**)&d_fx, size_f);
     cudaMalloc((void**)&d_seeds, size_ui);
     cudaMalloc((void**)&d_pcd, size_i);
     cudaMalloc((void**)&d_dcd, size_i);
@@ -630,7 +632,6 @@ void prepare()
         h_trigger = h_steps*h_trans;
 
         h_xb = (float*)malloc(size_f);
-        h_fx = (float*)malloc(size_f);
         h_dx = (float*)malloc(size_p);
 
         float dxtmp = h_beginx;
@@ -648,7 +649,6 @@ void prepare()
             dxtmp += dxstep;
         }
         
-        cudaMalloc((void**)&d_fx, size_f);
         cudaMalloc((void**)&d_dx, size_p);
     
         cudaMemcpy(d_dx, h_dx, size_p, cudaMemcpyHostToDevice);
@@ -658,11 +658,13 @@ void prepare()
 void copy_to_dev()
 {
     cudaMemcpy(d_x, h_x, size_f, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_fx, h_fx, size_f, cudaMemcpyHostToDevice);
 }
 
 void copy_from_dev()
 {
     cudaMemcpy(h_x, d_x, size_f, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_fx, d_fx, size_f, cudaMemcpyDeviceToHost);
 }
 
 void initial_conditions()
@@ -676,6 +678,8 @@ void initial_conditions()
         h_x[i] = 2.0f*h_x[i] - 1.0f; //x in (-1,1]
     }
 
+    memset(h_fx, 0.0f, size_f);
+
     copy_to_dev();
 }
 
@@ -685,8 +689,7 @@ void moments(float *av)
     float sx, sxb, tmp, taua, taub, dt;
     int i, j;
 
-    cudaMemcpy(h_x, d_x, size_f, cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_fx, d_fx, size_f, cudaMemcpyDeviceToHost);
+    copy_from_dev();
 
     unfold(h_x, h_fx);
 
@@ -763,9 +766,11 @@ void finish()
 {
 
     free(h_x);
+    free(h_fx);
     
     curandDestroyGenerator(gen);
     cudaFree(d_x);
+    cudaFree(d_fx);
     cudaFree(d_pcd);
     cudaFree(d_dcd);
     cudaFree(d_dst);
@@ -773,10 +778,8 @@ void finish()
     
     if (h_moments) {
         free(h_xb);
-        free(h_fx);
         free(h_dx);
 
-        cudaFree(d_fx);
         cudaFree(d_dx);
     }
 }
