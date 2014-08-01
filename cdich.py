@@ -1,6 +1,5 @@
 #!/usr/bin/python
-import commands, os
-import numpy
+import commands
 
 #Model
 fa = -3.0
@@ -39,8 +38,4 @@ for tau in [10**(A + i*step) for i in range(N)]:
       lcmd.append(l+" "+str(mua))
   cmd = '\n'.join(lcmd)
   print >>output, cmd
-
 output.close()
-  #os.system('tac %s.dat | gnuplot -e "fa=%s; fb=%s" physletta.plt' % (out,fa,fb))
-  #os.system('mv -v %s.dat %s.png %s' % (out, out, DIRNAME))
-

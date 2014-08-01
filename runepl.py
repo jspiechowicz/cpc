@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import commands, os
-import numpy
 
 #Model
 Dg = 0

@@ -1,22 +1,73 @@
-/*
- * Overdamped Brownian particle in symmetric piecewise linear potential
- *
- * \dot{x} = -V'(x) + Gaussian, Poissonian and dichotomous noise
- *
- * see J. Luczka, R. Bartussek and P. Hanggi, Europhys. Lett. 31, 431 (1995)
- *     J. Kula, T. Czernik and J. Luczka, Phys. Lett. A 214, 14 (1996)
- *
- * (C) 2014 Jakub Spiechowicz, Lukasz Machura
- *
- *          Institute of Physics, University of Silesia, Katowice
- *
- * Features included:
- *
- *  - Gaussian, Poissonian and dichotomous noise
- *  - exponential Poissonian kicks amplitude distribution
- *  - simplified weak order 2.0 adapted predictor-corrector scheme
- *  - asymptotic long time average velocity <<v>>
- *  - path parameters folding for utilization of single precision arithmetics
- *  - scan over multiple values of the system parameters in a single kernel call
- *  - c-version for testing
- */
+Overdamped Brownian particle in symmetric piecewise linear potential
+
+\dot{x} = -V'(x) + Gaussian, Poissonian and dichotomous noise
+
+[1] J. Luczka, R. Bartussek and P. Hanggi, Europhys. Lett. 31, 431 (1995)
+[2] J. Kula, T. Czernik and J. Luczka, Phys. Lett. A 214, 14 (1996)
+
+(C) 2014 Jakub Spiechowicz, Lukasz Machura
+Institute of Physics, University of Silesia, Katowice
+
+Features included:
+- Gaussian, Poissonian and dichotomous noise
+- exponential Poissonian kicks amplitude distribution
+- simplified weak order 2.0 adapted predictor-corrector scheme
+- asymptotic long time average velocity <<v>>
+- path parameters folding for utilization of single precision arithmetics
+- scan over multiple values of the system parameters in a single kernel call
+
+Requirements:
+- make
+- python with os and commands libraries
+- NVIDIA CUDA environment
+- additionaly for performance tests: GCC C compiler; python with numpy and scipy libraries; gnuplot
+
+Instalation:
+No need for installation. 
+
+Execution:
+Please use the provided Makefile and python scripts. Flags for make
+prog - compiles NVIDIA CUDA float version for Gaussian, Poissonian and dichotomous noise. Run ./prog with no parameters for more info.
+poisson - compiles NVIDIA CUDA float version for Poissonian noise. Run ./poisson with no parameters for more info.
+dich - compiles NVIDIA CUDA float version for dichotomous noise. Run ./dich with no parameters for more info.
+dpoisson - compiles NVIDIA CUDA double version for Poissonian noise. Run ./dpoisson with no parameters for more info.
+ddich - compiles NVIDIA CUDA double version for dichotomous noise. Run ./ddich with no parameters for more info.
+cpoisson - compiles C float version for Poissonian noise. Run ./cpoisson --help for more info.
+cdich - compiles C float version for dichotomous noise. Run ./cdich --help for more info.
+dcpoisson - compiles C double version for Poissonian noise. Run ./dcpoisson --help for more info.
+dcdich - compiles C double version for dichotomous noise. Run ./dcdich --help for more info.
+all - compiles all the above.
+test - compiles and runs tests for both C and NVIDIA CUDA for the Poissonian noise only. Produces PNG figure with the runtime comparison.
+epl - compiles and runs program to reproduce theory [1].
+physletta - compiles and runs program to reproduce theory [2].
+
+Program files:
+prog.cu - source code with NVIDIA CUDA float version for Gaussian, Poissonian and dichotomous noise.
+poisson.cu - source code with NVIDIA CUDA float version for Poissonian noise.
+dich.cu - source code with NVIDIA CUDA float version for dichotomous noise.
+poisson.c - source code with C float version for Poissonian noise.
+dich.c - source code with C float version for dichotomous noise.
+
+Python scripts:
+poisson.py, dpoisson.py - scripts to run NVIDIA CUDA version programs with Poissonian noise (float and double respectively). The script for double version available after 'make dpoisson'.
+dich.py, ddich.py - scripts to run NVIDIA CUDA version programs with dichotomous noise (float and double respectively). The script for double version available after 'make ddich'.
+cpoisson.py, dcpoisson.py - scripts to run C version programs with Poissonian noise (float and double respectively). The script for double version available after 'make dcpoisson'.
+cdich.py, dcdich.py - scripts to run C version programs with dichotomous noise (float and double respectively). The script for double version available after 'make dcdich'.
+runepl.py - script to run tests for publication [1]
+runphysletta.py - script to run tests for publication [2]
+interpolate.py - numpy and scipy based script for interpolating time and Gsteps/sec from fewer points (for tests). Usage: python interpolate.py <data file>
+
+Other scripts:
+epl.plt - gnuplot script for publication [1]
+physletta.plt - gnuplot script for publication [2]
+test.plt - gnuplot script for runtime comparison.
+
+Examples
+To reproduce theory [1]
+make epl
+
+To reproduce theory [2]
+make physletta
+
+Single precision average velocity '<v>' dependence on the intensity of the Poissonian noise 'Dp' (100 points, logarithmic scale from 10^-1 to 10^1), 1024 paths, 1000 periods, 400 steps per (automatically calculated) period, each kernel call every 4000 steps with block size =256. Use device '0'. The mean value of the Poissonian noise is fixed to 2.5, all other model parameters are calculated in a program.
+./poisson --dev=0 --Dp=0 --lambda=0 --mean=2.5 --block=256 --paths=1024 --periods=1000 --spp=400 --trans=0.1 --mode='moments' --points=100 --beginx=-1 --endx=1 --domain='1d' --domainx='p' --logx=1 --samples=4000

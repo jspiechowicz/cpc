@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import commands, os
-import numpy
 
 #Model
 Dg = 0
@@ -15,7 +14,7 @@ mean = 0
 
 #Simulation
 dev = 0
-block = 64
+block = 256
 paths = 1024
 periods = 1000
 spp = 200
